@@ -1,12 +1,13 @@
 import React from "react";
 import { useState } from "react";
 import { evaluate } from "mathjs";
-import { Button, Col, Row, Typography, Modal, ConfigProvider } from "antd";
+import { Button, Col, Row, Typography, Modal, Flex } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { theming } from "../theming"
 import { FaDeleteLeft, FaCalculator } from "react-icons/fa6";
 import { TbMathSymbols, TbMathFunction } from "react-icons/tb";
 import { IoMdClose } from "react-icons/io";
+import "./App.css"
 
 const { Text } = Typography;
 
@@ -89,19 +90,19 @@ export const App = () => {
     color: string = theming?.colors?.gray
   ) => (
     <Col span={span}>
-      <Button block onClick={onClick} style={{ backgroundColor: color, color: theming?.colors?.white }}>
+      <Button size="large" block onClick={onClick} style={{ backgroundColor: color, color: theming?.colors?.white, padding: "2rem", fontSize: "2rem" }}>
         {value}
       </Button>
     </Col>
   )
 
   return (
-    <ConfigProvider theme={theming?.antDesignTheme}>
-      <Content style={{ maxWidth: 400, margin: "50px auto", padding: 10, background: theming?.colors?.black, borderRadius: "5px" }}>
-        <Row gutter={[8, 8]}>
+    <Flex style={{ height: "100%", backgroundColor: theming?.colors?.lightGray }}>
+      <Content style={{ margin: "15rem 50rem", padding: 30, background: theming?.colors?.black, borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <Row gutter={[18, 18]}>
           <Col span={24}>
-            <Text type="secondary" style={{ color: theming?.colors?.white }}>
-              {prevResult !== "" ? fullMathCalculation : input || "0"}
+            <Text type="secondary" style={{ color: theming?.colors?.white, fontSize: "2rem" }}>
+              {prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0"}
             </Text>
           </Col>
           {renderButton(
@@ -112,7 +113,7 @@ export const App = () => {
           )}
           {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.orange)}
           {renderButton("/", () => handleOperation("/"), 6, theming?.colors?.orange)}
-          {renderButton("*", () => handleOperation("*"), 6, theming?.colors?.orange)}
+          {renderButton(<IoMdClose />, () => handleOperation("*"), 6, theming?.colors?.orange)}
           {renderButton("7", () => handleClick("7"))}
           {renderButton("8", () => handleClick("8"))}
           {renderButton("9", () => handleClick("9"))}
@@ -134,24 +135,27 @@ export const App = () => {
             style={{
               borderRadius: "5px",
             }}
-            width={250}
+            width={350}
             closeIcon={<IoMdClose color="white" />}
           >
-            <Button onClick={() => {
-              setIsModalOpen(false);
-            }}>
-              <TbMathSymbols /> Standard
-            </Button>
-            <Button onClick={() => {
-              setIsModalOpen(false); 
-            }}>
-              <TbMathFunction /> Wissenschaftlich
-            </Button>
+            <Flex vertical gap={10}>
+              <Button onClick={() => {
+                setIsModalOpen(false);
+              }}>
+                <TbMathSymbols /> Standard
+              </Button>
+              <Button onClick={() => {
+                setIsModalOpen(false);
+              }}>
+                <TbMathFunction /> Wissenschaftlich
+              </Button>
+            </Flex>
+
           </Modal>
           {renderButton("0", () => handleClick("0"))}
           {renderButton(".", () => handleClick("."))}
         </Row>
       </Content>
-    </ConfigProvider>
+    </Flex>
   );
 }
