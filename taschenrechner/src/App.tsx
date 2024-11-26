@@ -1,10 +1,12 @@
 import React from "react";
 import { useState } from "react";
 import { evaluate } from "mathjs";
-import { Button, Col, Row, Typography } from "antd";
+import { Button, Col, Row, Typography, Modal, ConfigProvider } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { theming } from "../theming"
-import { FaDeleteLeft } from "react-icons/fa6";
+import { FaDeleteLeft, FaCalculator } from "react-icons/fa6";
+import { TbMathSymbols, TbMathFunction } from "react-icons/tb";
+import { IoMdClose } from "react-icons/io";
 
 const { Text } = Typography;
 
@@ -13,6 +15,19 @@ export const App = () => {
   const [prevResult, setPrevResult] = useState<string>("");
   const [equalsClicked, setEqualsClicked] = useState<boolean>(false);
   const [fullMathCalculation, setFullMathCalculation] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleOk = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
 
   const handleClick = (value: string): void => {
     if (equalsClicked) {
@@ -81,37 +96,62 @@ export const App = () => {
   )
 
   return (
-    <Content style={{ maxWidth: 400, margin: "50px auto", padding: 10, background: theming?.colors?.black, borderRadius: "5px" }}>
-      <Row gutter={[8, 8]}>
-        <Col span={24}>
-          <Text type="secondary" style={{ color: theming?.colors?.white }}>
-            {prevResult !== "" ? fullMathCalculation : input || "0"}
-          </Text>
-        </Col>
-        {renderButton(
-          input && !equalsClicked ? <FaDeleteLeft /> : "AC",
-          deleteLastOrDeleteAll,
-          6,
-          theming?.colors?.lightGray
-        )}
-        {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.orange)}
-        {renderButton("/", () => handleOperation("/"), 6, theming?.colors?.orange)}
-        {renderButton("*", () => handleOperation("*"), 6, theming?.colors?.orange)}
-        {renderButton("7", () => handleClick("7"))}
-        {renderButton("8", () => handleClick("8"))}
-        {renderButton("9", () => handleClick("9"))}
-        {renderButton("-", () => handleOperation("-"), 6, theming?.colors?.orange)}
-        {renderButton("4", () => handleClick("4"))}
-        {renderButton("5", () => handleClick("5"))}
-        {renderButton("6", () => handleClick("6"))}
-        {renderButton("+", () => handleOperation("+"), 6, theming?.colors?.orange)}
-        {renderButton("1", () => handleClick("1"))}
-        {renderButton("2", () => handleClick("2"))}
-        {renderButton("3", () => handleClick("3"))}
-        {renderButton("=", equals, 6, theming?.colors?.orange)}
-        {renderButton("0", () => handleClick("0"))}
-        {renderButton(".", () => handleClick("."))}
-      </Row>
-    </Content>
+    <ConfigProvider theme={theming?.antDesignTheme}>
+      <Content style={{ maxWidth: 400, margin: "50px auto", padding: 10, background: theming?.colors?.black, borderRadius: "5px" }}>
+        <Row gutter={[8, 8]}>
+          <Col span={24}>
+            <Text type="secondary" style={{ color: theming?.colors?.white }}>
+              {prevResult !== "" ? fullMathCalculation : input || "0"}
+            </Text>
+          </Col>
+          {renderButton(
+            input && !equalsClicked ? <FaDeleteLeft /> : "AC",
+            deleteLastOrDeleteAll,
+            6,
+            theming?.colors?.lightGray
+          )}
+          {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.orange)}
+          {renderButton("/", () => handleOperation("/"), 6, theming?.colors?.orange)}
+          {renderButton("*", () => handleOperation("*"), 6, theming?.colors?.orange)}
+          {renderButton("7", () => handleClick("7"))}
+          {renderButton("8", () => handleClick("8"))}
+          {renderButton("9", () => handleClick("9"))}
+          {renderButton("-", () => handleOperation("-"), 6, theming?.colors?.orange)}
+          {renderButton("4", () => handleClick("4"))}
+          {renderButton("5", () => handleClick("5"))}
+          {renderButton("6", () => handleClick("6"))}
+          {renderButton("+", () => handleOperation("+"), 6, theming?.colors?.orange)}
+          {renderButton("1", () => handleClick("1"))}
+          {renderButton("2", () => handleClick("2"))}
+          {renderButton("3", () => handleClick("3"))}
+          {renderButton("=", equals, 6, theming?.colors?.orange)}
+          {renderButton(<FaCalculator />, () => showModal())}
+          <Modal
+            title={<Text style={{ color: theming?.colors?.orange }}>Taschenrechner Varianten</Text>}
+            open={isModalOpen}
+            onCancel={handleCancel}
+            footer={null}
+            style={{
+              borderRadius: "5px",
+            }}
+            width={250}
+            closeIcon={<IoMdClose color="white" />}
+          >
+            <Button onClick={() => {
+              setIsModalOpen(false);
+            }}>
+              <TbMathSymbols /> Standard
+            </Button>
+            <Button onClick={() => {
+              setIsModalOpen(false); 
+            }}>
+              <TbMathFunction /> Wissenschaftlich
+            </Button>
+          </Modal>
+          {renderButton("0", () => handleClick("0"))}
+          {renderButton(".", () => handleClick("."))}
+        </Row>
+      </Content>
+    </ConfigProvider>
   );
 }
