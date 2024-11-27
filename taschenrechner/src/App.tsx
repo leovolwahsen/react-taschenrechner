@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { evaluate } from "mathjs";
 import { Button, Col, Row, Typography, Modal, Flex, Form } from "antd";
@@ -18,6 +18,10 @@ export const App = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [isScientific, setIsScientific] = useState<boolean>(false);
   const [memory, setMemory] = useState<number | null>(null);
+  const [angleMode, setAngleMode] = useState<"rad" | "deg">("deg");
+  const [fontSize, setFontSize] = useState<number>(3.5);
+
+  const textRef = useRef<HTMLDivElement>(null);
 
   const scientificSymbols = [
     { label: "(", value: "(" },
@@ -49,7 +53,7 @@ export const App = () => {
     { label: "cosh", value: "cosh(" },
     { label: "tanh", value: "tanh(" },
     { label: "π", value: "pi" },
-    { label: "Rad", value: "rad" },
+    { label: angleMode === "rad" ? "Deg" : "Rad", value: "angleMode" },
   ];
 
   const showModal = () => {
@@ -64,7 +68,7 @@ export const App = () => {
     if (equalsClicked) {
       setInput(value);
       setEqualsClicked(false);
-    } {
+    } else {
       if (value === "mc") {
         setMemory(null);
       } else if (value === "m+") {
@@ -75,6 +79,8 @@ export const App = () => {
         else setMemory(-Number(input));
       } else if (value === "mr") {
         if (memory !== null) setInput(input + memory.toString());
+      } else if (value === "angleMode") {
+        setAngleMode((prev) => (prev === "rad" ? "deg" : "rad"));
       } else if (value === "!") {
 
         try {
@@ -83,7 +89,7 @@ export const App = () => {
           const factResult = factorial(Number(input));
           setInput(factResult.toString());
         } catch {
-          setInput("Error");
+          setInput("Rechenfehler");
         }
       } else {
         setInput(input + value);
@@ -119,10 +125,15 @@ export const App = () => {
         const closeParenthesesCount = (input.match(/\)/g) || []).length;
         const missingParenthesesCount = openParenthesesCount - closeParenthesesCount;
 
-        let correctedInput = input;
-        if (missingParenthesesCount > 0) {
-          correctedInput += ")".repeat(missingParenthesesCount);
+        let correctedInput = input + ")".repeat(missingParenthesesCount);
+
+        // Checking if Deg or Rad Button was pressed, and converting between degree and radians
+        if (angleMode === "deg") {
+          correctedInput = correctedInput.replace(/sin\(/g, "sin((pi/180)*")
+            .replace(/cos\(/g, "cos((pi/180)*")
+            .replace(/tan\(/g, "tan((pi/180)*");
         }
+
         const currentResult = evaluate(correctedInput);
 
         if (prevResult !== "") {
@@ -137,37 +148,80 @@ export const App = () => {
         }
         setEqualsClicked(true);
       } catch (error) {
-        setInput("Error in Calculation");
+        setInput("Rechenfehler");
         setEqualsClicked(true);
       }
     }
   };
 
+  // Button is reused for all calculator Buttons
   const renderButton = (
     value: React.ReactNode,
     onClick: () => void,
     span: number = 6,
-    color: string = theming?.colors?.lightGray
+    color: string = theming?.colors?.gray,
+    fontSize: string = "2rem",
+    TbAspectRatio: string = "auto",
+    TbBackground: string = "auto"
   ) => (
     <Col span={span}>
-      <Button size="large" block onClick={onClick} style={{ backgroundColor: color, color: theming?.colors?.white, padding: "2rem", fontSize: "2rem" }}>
-        {value}
+      <Button size="middle" block onClick={onClick} style={{ display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: color, color: theming?.colors?.white, fontSize: fontSize, borderRadius: 100, height: "100%", aspectRatio: TbAspectRatio, background: TbBackground }}>
+        <Flex justify="center" align="center">
+          {value}
+        </Flex>
       </Button>
     </Col>
-  )
+  );
+
+  useEffect(() => {
+    const adjustFontSize = () => {
+      if (textRef.current) {
+        const textWidth = textRef.current.offsetWidth;
+        if (textWidth > 400) {
+          setFontSize((prevFontSize) => Math.max(1, prevFontSize - 0.1));
+        } else {
+          setFontSize(3.5);
+        }
+      }
+    };
+
+    adjustFontSize();
+  }, [input, fullMathCalculation, prevResult]);
+
 
   return (
     <Flex style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Form size="large" style={{ width: "60vw", maxHeight: "90vh", padding: 30, borderRadius: "10px", backgroundColor: theming?.colors?.gray, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <Row gutter={[18, 18]}>
+      <Form size="small" style={{ width: "40vw", maxWidth: "550px", maxHeight: "90vh", padding: 30, borderRadius: "10px", backgroundColor: theming?.colors?.black, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <Row gutter={[14, 14]}>
           <Col span={24}>
-            <Text type="secondary" style={{ color: theming?.colors?.white, fontSize: "2rem" }}>
-              {prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0"}
-            </Text>
+            <Row style={{ display: "flex", alignItems: "end", position: "relative" }}>
+              {angleMode === "rad" ? (
+                <Col style={{ position: "absolute", left: 0 }}>
+                  <Text>
+                    {angleMode.charAt(0).toUpperCase() + angleMode.slice(1)}
+                  </Text>
+                </Col>
+              ) : null}
+
+              <Col flex={1} style={{ textAlign: "right",   overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis" }}>
+               <div
+                  ref={textRef}
+                  style={{
+                    fontSize: `${fontSize}rem`,
+                    color: theming?.colors?.white,
+                    lineHeight: "1.2",
+                    transition: "font-size 0.2s ease",
+                  }} >
+                  {prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0"}
+                </div>
+              </Col>
+            </Row>
           </Col>
           {isScientific &&
             scientificSymbols.map((symbol) => (
-              renderButton(symbol.label, () => handleClick(symbol.value), 4)
+              renderButton(symbol.label, () => handleClick(symbol.value), 4, theming?.colors?.gray, "1.4rem", "1", theming?.colors?.darkGray)
             ))}
           {renderButton(
             input && !equalsClicked ? <FaDeleteLeft /> : "AC",
@@ -175,21 +229,21 @@ export const App = () => {
             6,
             theming?.colors?.lightGray
           )}
-          {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.orange)}
-          {renderButton("/", () => handleOperation("/"), 6, theming?.colors?.orange)}
-          {renderButton(<IoMdClose />, () => handleOperation("*"), 6, theming?.colors?.orange)}
+          {renderButton("+/-", () => handleOperation("* (-1)"), 6, theming?.colors?.lightGray)}
+          {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.lightGray)}
+          {renderButton("÷", () => handleOperation("/"), 6, theming?.colors?.orange)}
           {renderButton("7", () => handleClick("7"))}
           {renderButton("8", () => handleClick("8"))}
           {renderButton("9", () => handleClick("9"))}
-          {renderButton("-", () => handleOperation("-"), 6, theming?.colors?.orange)}
+          {renderButton("x", () => handleOperation("*"), 6, theming?.colors?.orange)}
           {renderButton("4", () => handleClick("4"))}
           {renderButton("5", () => handleClick("5"))}
           {renderButton("6", () => handleClick("6"))}
-          {renderButton("+", () => handleOperation("+"), 6, theming?.colors?.orange)}
+          {renderButton("-", () => handleOperation("-"), 6, theming?.colors?.orange)}
           {renderButton("1", () => handleClick("1"))}
           {renderButton("2", () => handleClick("2"))}
           {renderButton("3", () => handleClick("3"))}
-          {renderButton("=", equals, 6, theming?.colors?.orange)}
+          {renderButton("+", () => handleOperation("+"), 6, theming?.colors?.orange)}
           {renderButton(<FaCalculator />, () => showModal())}
           <Modal
             title={<Text style={{ color: theming?.colors?.orange }}>Taschenrechner Varianten</Text>}
@@ -197,7 +251,7 @@ export const App = () => {
             onCancel={handleCancel}
             footer={null}
             style={{
-              borderRadius: "5px",
+              borderRadius: "50px",
             }}
             width={350}
             closeIcon={<IoMdClose color="white" />}
@@ -220,6 +274,7 @@ export const App = () => {
           </Modal>
           {renderButton("0", () => handleClick("0"))}
           {renderButton(".", () => handleClick("."))}
+          {renderButton("=", equals, 6, theming?.colors?.orange)}
         </Row>
       </Form>
     </Flex>

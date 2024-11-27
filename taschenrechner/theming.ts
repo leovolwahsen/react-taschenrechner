@@ -1,8 +1,9 @@
 export const theming = {
     colors: {
-        orange: "#f69908",
+        orange: "#FF9F0B",
+        darkGray: "#1C1C1D",
         gray: "#313131",
-        lightGray: "#9f9f9f",
+        lightGray: "#5C5C5F",
         black: "#000000",
         white: "#FFFFFF",
     },
