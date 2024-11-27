@@ -1,8 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { evaluate } from "mathjs";
-import { Button, Col, Row, Typography, Modal, Flex } from "antd";
-import { Content } from "antd/es/layout/layout";
+import { Button, Col, Row, Typography, Modal, Flex, Form } from "antd";
 import { theming } from "../theming"
 import { FaDeleteLeft, FaCalculator } from "react-icons/fa6";
 import { TbMathSymbols, TbMathFunction } from "react-icons/tb";
@@ -17,6 +16,40 @@ export const App = () => {
   const [equalsClicked, setEqualsClicked] = useState<boolean>(false);
   const [fullMathCalculation, setFullMathCalculation] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [isScientific, setIsScientific] = useState<boolean>(false);
+
+  const scientificSymbols = [
+    { label: "(", value: "(" },
+    { label: ")", value: ")" },
+    { label: "mc", value: "mc" },
+    { label: "m+", value: "m+" },
+    { label: "m-", value: "m-" },
+    { label: "mr", value: "mr" },
+    { label: "2ⁿᵈ", value: "2ⁿᵈ" },
+    { label: "x²", value: "x²" },
+    { label: "x³", value: "x³" },
+    { label: "xʸ", value: "xʸ" },
+    { label: "eˣ", value: "eˣ" },
+    { label: "10ˣ", value: "10ˣ" },
+    { label: "1/x", value: "1/x" },
+    { label: "2√x", value: "2√x" },
+    { label: "3√x", value: "3√x" },
+    { label: "y√x", value: "y√x" },
+    { label: "In", value: "In(" },
+    { label: "log₁₀", value: "log₁₀" },
+    { label: "x!", value: "x!" },
+    { label: "sin", value: "sin(" },
+    { label: "cos", value: "cos(" },
+    { label: "tan", value: "tan(" },
+    { label: "e", value: "e" },
+    { label: "EE", value: "EE" },
+    { label: "Rand", value: "Rand" },
+    { label: "sinh", value: "sinh(" },
+    { label: "cosh", value: "cosh(" },
+    { label: "tanh", value: "tanh(" },
+    { label: "π", value: "pi" },
+    { label: "Rad", value: "Rad" },
+  ];
 
   const showModal = () => {
     setIsModalOpen(true);
@@ -98,13 +131,17 @@ export const App = () => {
 
   return (
     <Flex style={{ height: "100%", backgroundColor: theming?.colors?.lightGray }}>
-      <Content style={{ margin: "15rem 50rem", padding: 30, background: theming?.colors?.black, borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <Form size="large" style={{ margin: "10rem 45rem 20rem", padding: 30, background: theming?.colors?.black, borderRadius: "10px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <Row gutter={[18, 18]}>
           <Col span={24}>
             <Text type="secondary" style={{ color: theming?.colors?.white, fontSize: "2rem" }}>
               {prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0"}
             </Text>
           </Col>
+          {isScientific && 
+          scientificSymbols.map((symbol) => (
+            renderButton(symbol.label, () => handleClick(symbol.value), 6)
+          ))}
           {renderButton(
             input && !equalsClicked ? <FaDeleteLeft /> : "AC",
             deleteLastOrDeleteAll,
@@ -140,12 +177,12 @@ export const App = () => {
           >
             <Flex vertical gap={10}>
               <Button onClick={() => {
-                setIsModalOpen(false);
+                setIsScientific(false);
               }}>
                 <TbMathSymbols /> Standard
               </Button>
               <Button onClick={() => {
-                setIsModalOpen(false);
+                setIsScientific(true);
               }}>
                 <TbMathFunction /> Wissenschaftlich
               </Button>
@@ -155,7 +192,7 @@ export const App = () => {
           {renderButton("0", () => handleClick("0"))}
           {renderButton(".", () => handleClick("."))}
         </Row>
-      </Content>
+      </Form>
     </Flex>
   );
 }
