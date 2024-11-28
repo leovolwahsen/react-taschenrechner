@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useState } from "react";
 import { evaluate } from "mathjs";
-import { Button, Col, Row, Typography, Modal, Flex, Form } from "antd";
+import { Button, Col, Row, Typography, Modal, Flex, Form, Grid } from "antd";
 import { theming } from "../theming"
 import { FaDeleteLeft, FaCalculator } from "react-icons/fa6";
 import { TbMathSymbols, TbMathFunction } from "react-icons/tb";
@@ -9,6 +9,7 @@ import { IoMdClose } from "react-icons/io";
 import "./App.css"
 
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 export const App = () => {
   const [input, setInput] = useState<string>("");
@@ -22,6 +23,7 @@ export const App = () => {
   const [fontSize, setFontSize] = useState<number>(3.5);
 
   const textRef = useRef<HTMLDivElement>(null);
+  const screen = useBreakpoint();
 
   const scientificSymbols = [
     { label: "(", value: "(" },
@@ -160,12 +162,13 @@ export const App = () => {
     onClick: () => void,
     span: number = 6,
     color: string = theming?.colors?.gray,
-    fontSize: string = "2rem",
+    fontSize: string = "2.5rem",
+    paddingBottom: string = "0.4rem",
     TbAspectRatio: string = "auto",
     TbBackground: string = "auto"
   ) => (
     <Col span={span}>
-      <Button size="middle" block onClick={onClick} style={{ display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: color, color: theming?.colors?.white, fontSize: fontSize, borderRadius: 100, height: "100%", aspectRatio: TbAspectRatio, background: TbBackground }}>
+      <Button size="small" block onClick={onClick} style={{ display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: color, color: theming?.colors?.white, fontSize: fontSize, borderRadius: 100, height: "100%", aspectRatio: TbAspectRatio, background: TbBackground, textAlign: "center", paddingBottom: paddingBottom }}>
         <Flex justify="center" align="center">
           {value}
         </Flex>
@@ -176,25 +179,36 @@ export const App = () => {
   useEffect(() => {
     const adjustFontSize = () => {
       if (textRef.current) {
-        const textWidth = textRef.current.offsetWidth;
-        if (textWidth > 400) {
+        const containerWidth = textRef.current.parentElement?.offsetWidth || 0;
+        const textWidth = textRef.current.scrollWidth;
+
+        if (textWidth > containerWidth) {
           setFontSize((prevFontSize) => Math.max(1, prevFontSize - 0.1));
-        } else {
-          setFontSize(3.5);
+        } else if (fontSize < 3.5) {
+          setFontSize((prevFontSize) => Math.min(3.5, prevFontSize + 0.1));
         }
       }
     };
 
-    adjustFontSize();
-  }, [input, fullMathCalculation, prevResult]);
+    const resizeObserver = new ResizeObserver(() => {
+      adjustFontSize();
+    });
 
+    if (textRef.current) {
+      resizeObserver.observe(textRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [input, fullMathCalculation, prevResult]);
 
   return (
     <Flex style={{ height: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
-      <Form size="small" style={{ width: "40vw", maxWidth: "550px", maxHeight: "90vh", padding: 30, borderRadius: "10px", backgroundColor: theming?.colors?.black, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <Row gutter={[14, 14]}>
+      <Form size="small" style={{ width: `${screen.xl ? "30vw" : "40vw"}`, height: "auto", padding: "30px", borderRadius: "10px", backgroundColor: theming?.colors?.black, boxSizing: "border-box", overflow: "hidden" }}>
+        <Row gutter={[28, 12]} >
           <Col span={24}>
-            <Row style={{ display: "flex", alignItems: "end", position: "relative" }}>
+            <Row style={{ display: "flex", alignItems: "flex-end", position: "relative", height: "4rem", width: "100%" }}>
               {angleMode === "rad" ? (
                 <Col style={{ position: "absolute", left: 0 }}>
                   <Text>
@@ -203,32 +217,32 @@ export const App = () => {
                 </Col>
               ) : null}
 
-              <Col flex={1} style={{ textAlign: "right",   overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis" }}>
-               <div
+              <Col flex={1} style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                <Text
                   ref={textRef}
-                  style={{
-                    fontSize: `${fontSize}rem`,
-                    color: theming?.colors?.white,
-                    lineHeight: "1.2",
-                    transition: "font-size 0.2s ease",
-                  }} >
-                  {prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0"}
-                </div>
+                  style={{ fontSize: `${fontSize}rem`, color: theming?.colors?.white,  }}>
+                  {
+                    (() => {
+                      const valueToDisplay = prevResult !== "" ? fullMathCalculation.replace(/\*/g, "x") : input.replace(/\*/g, "x") || "0";
+                      const numericValue = parseFloat(valueToDisplay.replace(/x/g, "*"));
+
+                      if (!isNaN(numericValue) && numericValue !== 0) {
+                        if (Math.abs(numericValue) >= 1e10 || Math.abs(numericValue) < 1e-4) {
+                          return numericValue.toExponential(5)
+                        }
+                      }
+                      return valueToDisplay;
+                    })()
+                  }
+                </Text>
               </Col>
             </Row>
           </Col>
           {isScientific &&
             scientificSymbols.map((symbol) => (
-              renderButton(symbol.label, () => handleClick(symbol.value), 4, theming?.colors?.gray, "1.4rem", "1", theming?.colors?.darkGray)
+              renderButton(symbol.label, () => handleClick(symbol.value), 4, theming?.colors?.gray, "1.5rem", "0rem")
             ))}
-          {renderButton(
-            input && !equalsClicked ? <FaDeleteLeft /> : "AC",
-            deleteLastOrDeleteAll,
-            6,
-            theming?.colors?.lightGray
-          )}
+          {renderButton(input && !equalsClicked ? <FaDeleteLeft /> : "AC", deleteLastOrDeleteAll, 6, theming?.colors?.lightGray)}
           {renderButton("+/-", () => handleOperation("* (-1)"), 6, theming?.colors?.lightGray)}
           {renderButton("%", () => handleOperation("%"), 6, theming?.colors?.lightGray)}
           {renderButton("÷", () => handleOperation("/"), 6, theming?.colors?.orange)}
@@ -244,7 +258,7 @@ export const App = () => {
           {renderButton("2", () => handleClick("2"))}
           {renderButton("3", () => handleClick("3"))}
           {renderButton("+", () => handleOperation("+"), 6, theming?.colors?.orange)}
-          {renderButton(<FaCalculator />, () => showModal())}
+          {renderButton(<FaCalculator />, () => showModal(), 6, theming?.colors?.gray, "2.5rem", "0rem")}
           <Modal
             title={<Text style={{ color: theming?.colors?.orange }}>Taschenrechner Varianten</Text>}
             open={isModalOpen}
